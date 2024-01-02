@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_0zoclz3" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.18.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.3.0">
+  <bpmn:collaboration id="Collaboration_1vcahu9">
+    <bpmn:participant id="Participant_124hzut" name="Option booking process" processRef="Process_0qgwvqj" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_0qgwvqj" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_14b6aga">
+      <bpmn:lane id="Lane_0xj2ak4" name="Option booking service">
+        <bpmn:flowNodeRef>GetOptionDetails</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>BookOptionForCustomer</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_1k49nwg" name="Payment service">
+        <bpmn:flowNodeRef>Gateway_1n2pshi</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>CheckVoucherValidaty</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>RedeemVoucher</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>CheckCustomerBalance</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>DeductPriceFromBalance</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_1592bvo</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>InvalidVoucherError</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>InsufficientCreditEscalation</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_0mxacmc" name="Customer communication service">
+        <bpmn:flowNodeRef>CreateInvalidVoucherNotification</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1sb49q1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_12kuruv</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1wk7sn9</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0tkh42b</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>CreateSuccessfulBookingNotification</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:exclusiveGateway id="Gateway_1n2pshi" default="Flow_0h4strq">
+      <bpmn:incoming>Flow_0ujhboo</bpmn:incoming>
+      <bpmn:outgoing>Flow_1v4y0jz</bpmn:outgoing>
+      <bpmn:outgoing>Flow_0h4strq</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="CheckVoucherValidaty" name="Check voucher validity">
+      <bpmn:documentation>Checks the validity of the provided voucher code, creating an escalation if it is invalid.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="check-voucher-validity" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=payment.voucherCode" target="voucherCode" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1v4y0jz</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ysg40b</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="RedeemVoucher" name="Redeem voucher">
+      <bpmn:documentation>Redeems the voucher with the provided code for the customer with the provided ID.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="redeem-voucher" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=customer.id" target="customerId" />
+          <zeebe:input source="=payment.voucherCode" target="voucherCode" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1ysg40b</bpmn:incoming>
+      <bpmn:outgoing>Flow_0gqke8x</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="CheckCustomerBalance" name="Check if customer balance is sufficient">
+      <bpmn:documentation>Checks if the balance of the customer is sufficient for the option with the provided ID, creating an escalation if it is not sufficient.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="check-customer-balance" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=customer.id" target="customerId" />
+          <zeebe:input source="=option.priceCent" target="optionPriceCent" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0h4strq</bpmn:incoming>
+      <bpmn:outgoing>Flow_18pw8pg</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="DeductPriceFromBalance" name="Deduct price from customer balance">
+      <bpmn:documentation>Deducts the provided option price from the balance of the customer with the provided ID.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="deduct-price-from-balance" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=customer.id" target="customerId" />
+          <zeebe:input source="=option.priceCent" target="optionPriceCent" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_18pw8pg</bpmn:incoming>
+      <bpmn:outgoing>Flow_14kttsp</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_1592bvo">
+      <bpmn:incoming>Flow_0gqke8x</bpmn:incoming>
+      <bpmn:incoming>Flow_14kttsp</bpmn:incoming>
+      <bpmn:outgoing>Flow_0nin55x</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="CreateInvalidVoucherNotification" name="Create invalid voucher notification">
+      <bpmn:documentation>Creates a notification regarding an invalid voucher for the provided voucher code and customer ID.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="create-invalid-voucher-notification" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=payment.voucherCode" target="voucherCode" />
+          <zeebe:input source="=customer.id" target="customerId" />
+          <zeebe:input source="=option.name" target="optionName" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0cb09mo</bpmn:incoming>
+      <bpmn:outgoing>Flow_0yixdxk</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Event_1sb49q1" name="Booking aborted">
+      <bpmn:incoming>Flow_0yixdxk</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Activity_12kuruv" name="Create insufficient credit notification">
+      <bpmn:documentation>Creates a notification regarding insufficient balance for an option booking for the provided option details and customer ID.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="create-insufficient-credit-notification" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=customer.id" target="customerId" />
+          <zeebe:input source="=option.name" target="optionName" />
+          <zeebe:input source="=price.cent" target="priceCent" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0joo31s</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ohrjar</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Event_1wk7sn9" name="Booking aborted">
+      <bpmn:incoming>Flow_1ohrjar</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="Event_0tkh42b" name="Booking completed">
+      <bpmn:incoming>Flow_02c4p99</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="CreateSuccessfulBookingNotification" name="Create successful booking notification">
+      <bpmn:documentation>Creates a notification for a successful booking of an option for the provided option details and customer ID.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="create-successful-booking-notification" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=customer.id" target="customerId" />
+          <zeebe:input source="=option.name" target="optionName" />
+          <zeebe:input source="=booking.start" target="bookingStart" />
+          <zeebe:input source="=booking.end" target="bookingEnd" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0utrt3j</bpmn:incoming>
+      <bpmn:outgoing>Flow_02c4p99</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="GetOptionDetails" name="Get option details">
+      <bpmn:documentation>Retrieves the details of the option with the ID provided as the input.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="get-option-details" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=option.id" target="optionId" />
+          <zeebe:output source="=name" target="option.name" />
+          <zeebe:output source="=durationHours" target="option.durationHours" />
+          <zeebe:output source="=priceCent" target="option.priceCent" />
+        </zeebe:ioMapping>
+        <zeebe:properties />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0cnpwbr</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ujhboo</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:startEvent id="StartEvent_1" name="New option booking">
+      <bpmn:outgoing>Flow_0cnpwbr</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="BookOptionForCustomer" name="Book option for customer">
+      <bpmn:documentation>Books the option with the provided ID for the customer with the provided ID.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="book-option" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=customer.id" target="customerId" />
+          <zeebe:input source="=option.id" target="optionId" />
+          <zeebe:output source="=bookingStart" target="booking.start" />
+          <zeebe:output source="=bookingEnd" target="booking.end" />
+        </zeebe:ioMapping>
+        <zeebe:properties />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0nin55x</bpmn:incoming>
+      <bpmn:outgoing>Flow_0utrt3j</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_0ujhboo" sourceRef="GetOptionDetails" targetRef="Gateway_1n2pshi" />
+    <bpmn:sequenceFlow id="Flow_1v4y0jz" name="yes" sourceRef="Gateway_1n2pshi" targetRef="CheckVoucherValidaty">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=payment.voucherCode != null</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0h4strq" sourceRef="Gateway_1n2pshi" targetRef="CheckCustomerBalance" />
+    <bpmn:sequenceFlow id="Flow_1ysg40b" sourceRef="CheckVoucherValidaty" targetRef="RedeemVoucher" />
+    <bpmn:sequenceFlow id="Flow_0gqke8x" sourceRef="RedeemVoucher" targetRef="Gateway_1592bvo" />
+    <bpmn:sequenceFlow id="Flow_18pw8pg" sourceRef="CheckCustomerBalance" targetRef="DeductPriceFromBalance" />
+    <bpmn:sequenceFlow id="Flow_14kttsp" sourceRef="DeductPriceFromBalance" targetRef="Gateway_1592bvo" />
+    <bpmn:sequenceFlow id="Flow_0nin55x" sourceRef="Gateway_1592bvo" targetRef="BookOptionForCustomer" />
+    <bpmn:sequenceFlow id="Flow_0cb09mo" sourceRef="InvalidVoucherError" targetRef="CreateInvalidVoucherNotification" />
+    <bpmn:sequenceFlow id="Flow_0yixdxk" sourceRef="CreateInvalidVoucherNotification" targetRef="Event_1sb49q1" />
+    <bpmn:sequenceFlow id="Flow_0joo31s" sourceRef="InsufficientCreditEscalation" targetRef="Activity_12kuruv" />
+    <bpmn:sequenceFlow id="Flow_1ohrjar" sourceRef="Activity_12kuruv" targetRef="Event_1wk7sn9" />
+    <bpmn:sequenceFlow id="Flow_02c4p99" sourceRef="CreateSuccessfulBookingNotification" targetRef="Event_0tkh42b" />
+    <bpmn:sequenceFlow id="Flow_0utrt3j" sourceRef="BookOptionForCustomer" targetRef="CreateSuccessfulBookingNotification" />
+    <bpmn:sequenceFlow id="Flow_0cnpwbr" sourceRef="StartEvent_1" targetRef="GetOptionDetails" />
+    <bpmn:boundaryEvent id="InvalidVoucherError" name="Invalid&#10;voucher" attachedToRef="CheckVoucherValidaty">
+      <bpmn:outgoing>Flow_0cb09mo</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_0ox7sm7" errorRef="Error_0gyoxqx" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="InsufficientCreditEscalation" name="Insufficient&#10;balance" attachedToRef="CheckCustomerBalance">
+      <bpmn:outgoing>Flow_0joo31s</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_1oulsha" errorRef="Error_0q08dpw" />
+    </bpmn:boundaryEvent>
+    <bpmn:textAnnotation id="TextAnnotation_1frqn7e">
+      <bpmn:text>Initial variables:
+
+customer.id (ID of the customer to book the option for)
+
+option.id (ID of the option to be booked)
+
+payment.voucherCode (Code of the voucher to be used; null if the option is payed via balance)</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_0u9p25g" sourceRef="StartEvent_1" targetRef="TextAnnotation_1frqn7e" />
+  </bpmn:process>
+  <bpmn:error id="Error_0q08dpw" name="InsufficientBalance" errorCode="insufficient-balance" />
+  <bpmn:error id="Error_0gyoxqx" name="InvalidVoucher" errorCode="invalid-voucher" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1vcahu9">
+      <bpmndi:BPMNShape id="Participant_124hzut_di" bpmnElement="Participant_124hzut" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="760" height="940" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_0mxacmc_di" bpmnElement="Lane_0mxacmc" isHorizontal="true" bioc:stroke="#0d4372" bioc:fill="#bbdefb" color:background-color="#bbdefb" color:border-color="#0d4372">
+        <dc:Bounds x="190" y="770" width="730" height="250" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1k49nwg_di" bpmnElement="Lane_1k49nwg" isHorizontal="true" bioc:stroke="#6b3c00" bioc:fill="#ffe0b2" color:background-color="#ffe0b2" color:border-color="#6b3c00">
+        <dc:Bounds x="190" y="390" width="730" height="380" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_0xj2ak4_di" bpmnElement="Lane_0xj2ak4" isHorizontal="true" bioc:stroke="#5b176d" bioc:fill="#e1bee7" color:background-color="#e1bee7" color:border-color="#5b176d">
+        <dc:Bounds x="190" y="80" width="730" height="310" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1n2pshi_di" bpmnElement="Gateway_1n2pshi" isMarkerVisible="true">
+        <dc:Bounds x="425" y="425" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0xud7iw_di" bpmnElement="CheckVoucherValidaty">
+        <dc:Bounds x="260" y="410" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1c5r5uq_di" bpmnElement="RedeemVoucher">
+        <dc:Bounds x="310" y="570" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_07w4fzj_di" bpmnElement="CheckCustomerBalance">
+        <dc:Bounds x="540" y="410" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0ihckiq_di" bpmnElement="DeductPriceFromBalance">
+        <dc:Bounds x="490" y="570" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_1592bvo_di" bpmnElement="Gateway_1592bvo" isMarkerVisible="true">
+        <dc:Bounds x="425" y="665" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0rfvm1h_di" bpmnElement="CreateInvalidVoucherNotification">
+        <dc:Bounds x="250" y="800" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1sb49q1_di" bpmnElement="Event_1sb49q1">
+        <dc:Bounds x="282" y="932" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="260" y="975" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0a7a3j4_di" bpmnElement="Activity_12kuruv">
+        <dc:Bounds x="570" y="800" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1wk7sn9_di" bpmnElement="Event_1wk7sn9">
+        <dc:Bounds x="602" y="932" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="580" y="975" width="81" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0tkh42b_di" bpmnElement="Event_0tkh42b">
+        <dc:Bounds x="802" y="932" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="794" y="975" width="52" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_06z0bxf_di" bpmnElement="CreateSuccessfulBookingNotification">
+        <dc:Bounds x="770" y="800" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0x01tte_di" bpmnElement="GetOptionDetails">
+        <dc:Bounds x="400" y="250" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="262" y="272" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="252" y="315" width="56" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0c7g37z_di" bpmnElement="BookOptionForCustomer">
+        <dc:Bounds x="670" y="250" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_1frqn7e_di" bpmnElement="TextAnnotation_1frqn7e">
+        <dc:Bounds x="280" y="100" width="320" height="127" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0n8m51o_di" bpmnElement="InsufficientCreditEscalation">
+        <dc:Bounds x="602" y="472" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="623" y="515" width="54" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_0kzdpti_di" bpmnElement="InvalidVoucherError">
+        <dc:Bounds x="262" y="472" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="230" y="515" width="40" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_0ujhboo_di" bpmnElement="Flow_0ujhboo">
+        <di:waypoint x="450" y="330" />
+        <di:waypoint x="450" y="425" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1v4y0jz_di" bpmnElement="Flow_1v4y0jz">
+        <di:waypoint x="425" y="450" />
+        <di:waypoint x="360" y="450" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="384" y="432" width="17" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0h4strq_di" bpmnElement="Flow_0h4strq">
+        <di:waypoint x="475" y="450" />
+        <di:waypoint x="540" y="450" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ysg40b_di" bpmnElement="Flow_1ysg40b">
+        <di:waypoint x="340" y="490" />
+        <di:waypoint x="340" y="570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0gqke8x_di" bpmnElement="Flow_0gqke8x">
+        <di:waypoint x="340" y="650" />
+        <di:waypoint x="340" y="690" />
+        <di:waypoint x="425" y="690" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_18pw8pg_di" bpmnElement="Flow_18pw8pg">
+        <di:waypoint x="560" y="490" />
+        <di:waypoint x="560" y="570" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_14kttsp_di" bpmnElement="Flow_14kttsp">
+        <di:waypoint x="540" y="650" />
+        <di:waypoint x="540" y="690" />
+        <di:waypoint x="475" y="690" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0nin55x_di" bpmnElement="Flow_0nin55x">
+        <di:waypoint x="450" y="715" />
+        <di:waypoint x="450" y="750" />
+        <di:waypoint x="720" y="750" />
+        <di:waypoint x="720" y="330" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0cb09mo_di" bpmnElement="Flow_0cb09mo">
+        <di:waypoint x="280" y="508" />
+        <di:waypoint x="280" y="800" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0yixdxk_di" bpmnElement="Flow_0yixdxk">
+        <di:waypoint x="300" y="880" />
+        <di:waypoint x="300" y="932" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0joo31s_di" bpmnElement="Flow_0joo31s">
+        <di:waypoint x="620" y="508" />
+        <di:waypoint x="620" y="800" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ohrjar_di" bpmnElement="Flow_1ohrjar">
+        <di:waypoint x="620" y="880" />
+        <di:waypoint x="620" y="932" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_02c4p99_di" bpmnElement="Flow_02c4p99">
+        <di:waypoint x="820" y="880" />
+        <di:waypoint x="820" y="932" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0utrt3j_di" bpmnElement="Flow_0utrt3j">
+        <di:waypoint x="770" y="290" />
+        <di:waypoint x="820" y="290" />
+        <di:waypoint x="820" y="800" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0cnpwbr_di" bpmnElement="Flow_0cnpwbr">
+        <di:waypoint x="298" y="290" />
+        <di:waypoint x="400" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_0u9p25g_di" bpmnElement="Association_0u9p25g">
+        <di:waypoint x="286" y="273" />
+        <di:waypoint x="302" y="227" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
