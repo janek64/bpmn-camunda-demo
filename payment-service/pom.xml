@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>de.thm.mni.ssa.bpmn</groupId>
-  <artifactId>option-booking-service</artifactId>
+  <artifactId>payment-service</artifactId>
   <version>1.0.0-SNAPSHOT</version>
 
   <properties>
