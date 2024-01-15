@@ -1,0 +1,32 @@
+{#include base}
+    {#title}Customers{/title}
+    {#content}
+        <h1>Customers</h1>
+        <div class="mt-3">
+        {#if customers.size() > 0}
+            <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Customer ID</th>
+                <th scope="col">Name</th>
+                <th scope="col">Balance</th>
+            </tr>
+            </thead>
+            <tbody>
+            {#for customer in customers}
+                <tr>
+                <td>{customer.getCustomerId()}</td>
+                <td>{customer.getName()}</td>
+                <td>{str:format('%.2f', customer.getBalanceEuro())}€</td>
+                </tr>
+            {/for}
+            </tbody>
+            </table>
+        {#else}
+            <div class="alert alert-info" role="alert">
+                Could not find customers!
+            </div>
+        {/if}
+        </div>
+    {/content}
+{/include}
