@@ -1,7 +1,7 @@
 package de.thm.mni.ssa.bpmn.payment.repository;
 
 import de.thm.mni.ssa.bpmn.payment.model.entity.Voucher;
-import de.thm.mni.ssa.bpmn.communication.model.entity.Voucher_;
+import de.thm.mni.ssa.bpmn.payment.model.entity.Voucher_;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
