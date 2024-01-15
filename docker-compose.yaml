@@ -6,6 +6,7 @@ volumes:
 # Network for internal communication between all services
 networks:
   camunda:
+  services:
 
 services:
   # Zeebe for executing BPMN processes
@@ -106,4 +107,52 @@ services:
       - camunda
     profiles:
       - camunda
+    restart: unless-stopped
+
+  # PostgreSQL instance for the option-booking-service
+  option-booking-postgres:
+    container_name: option-booking-postgres
+    image: postgres:15.5-alpine
+    environment:
+      POSTGRES_USER: option-booking
+      POSTGRES_PASSWORD: option-booking
+      POSTGRES_DB: option-booking
+    # Expose the Postgres port to make the database accessible in development
+    ports:
+      - 5432:5432
+      # Use the built-in Postgres healthcheck
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U option-booking"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - services
+    profiles:
+      - databases
+      - services
+    restart: unless-stopped
+
+  # Instance of the option-booking-service
+  option-booking-service:
+    container_name: option-booking-service
+    build:
+      context: ./option-booking-service
+      dockerfile: src/main/docker/Dockerfile.jvm
+    environment:
+      QUARKUS_MANAGEMENT_PORT: 8000
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://option-booking-postgres:5432/option-booking
+      QUARKUS_ZEEBE_CLIENT_BROKER_GATEWAY_ADDRESS: zeebe:26500
+    ports:
+      - 7000:7000
+    healthcheck:
+      test: [ "CMD-SHELL", "curl http://localhost:8000/health | grep -q '\"status\": \"UP\"'" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - services
+      - camunda
+    profiles:
+      - services
     restart: unless-stopped
